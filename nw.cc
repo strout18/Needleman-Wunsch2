@@ -3,7 +3,7 @@
 #include <iostream>
 #include <cassert>
 
-Needleman::Needleman(std::string seq_a, std::string seq_b, int match, int indel, int mismatch)
+Needleman::Needleman(std::string seq_a, std::string seq_b, int indel, int match, int mismatch)
 : seq_a_(seq_a), seq_b_(seq_b), len_a_(seq_a.length()), len_b_(seq_b.length()), match_(match), indel_(indel), mismatch_(mismatch) {
 }
 
@@ -16,18 +16,22 @@ void Needleman::make_grid() {
     }
     grid_.push_back(line1);
     trace_.push_back(line1dir);
+}
 
-    //makes rest of grid, which will initially be len_b_ + 1 rows where each row is populated with len_a_ of the row's first number
-    for (auto i = 1; i < len_b_ + 1; i++) {        //starts from 1 bc we've already done first row
-        std::vector<int> new_vect = {indel_ * i};
-        grid_.push_back(new_vect);
+int Needleman::get_match_score(char a, char b) {
+    if (a == b) {
+        return match_;
     }
-    assert (grid_.size() == len_b_ + 1);
+    else {return mismatch_;}
 }
 
 //seq_a on top, seq_b on side
 int Needleman::score_grid() {                           //returns alignment score
     for (auto row = 1; row < len_b_ + 1; row++) { //by row
+
+        std::vector<int> new_vect = {indel_ * row};
+        grid_.push_back(new_vect);
+
         //can only go top from first in row
         std::vector<std::string> row_vect = {"t"};                 //e.g. < <'t', 'td', ..., 'd'>, <'d', ..., 't'>, ... , <'l', 'l', ... 'l'> > (stored by rows)
         for (auto col = 1; col < len_a_ + 1; col++) {
@@ -35,12 +39,7 @@ int Needleman::score_grid() {                           //returns alignment scor
             int top = grid_[row - 1][col] + indel_;       //cell above
             int left = grid_[row][col - 1] + indel_;      //cell to the left
             int diag = grid_[row-1][col-1];
-            if (seq_b_[row-1] == seq_a_[col-1]) {           //everything is shifted top left by 2 place bc extra column + row
-                diag += match_;
-            }
-            else {
-                diag += mismatch_;
-            }
+            diag += get_match_score(seq_b_[row-1], seq_a_[col-1]); //everything is shifted top left by 2 place bc extra column + row
             int maximum = std::max({top, left, diag});
             grid_[row].push_back(maximum);
 
